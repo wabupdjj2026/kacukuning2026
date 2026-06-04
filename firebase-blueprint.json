@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "KelasKepahaman": {
+      "title": "KelasKepahaman",
+      "description": "Represents a class of Pathfinder Kepahaman",
+      "type": "object",
+      "properties": {
+        "id_kelas": { "type": "string", "description": "Unique class identifier" },
+        "nama_kelas": { "type": "string", "description": "Name of the class" },
+        "instruktur": { "type": "string", "description": "Assigned default instructor" },
+        "deskripsi": { "type": "string", "description": "Description of the course" },
+        "kategori": {
+          "type": "string",
+          "enum": ["Alkitab", "Alam Bebas", "Keterampilan", "Seni & Sosial", "Lainnya"]
+        }
+      },
+      "required": ["id_kelas", "nama_kelas", "instruktur", "deskripsi", "kategori"]
+    },
+    "Peserta": {
+      "title": "Peserta",
+      "description": "Represents a participant or student",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "nama_lengkap": { "type": "string" },
+        "no_peserta": { "type": "string" },
+        "Nama_Klub": { "type": "string" },
+        "Nama_Jemaat": { "type": "string" }
+      },
+      "required": ["username", "password", "nama_lengkap", "no_peserta", "Nama_Klub", "Nama_Jemaat"]
+    },
+    "KelasMulai": {
+      "title": "KelasMulai",
+      "description": "Represents a circulation log or active class transaction",
+      "type": "object",
+      "properties": {
+        "id_transaksi": { "type": "string" },
+        "no_peserta": { "type": "string" },
+        "id_kelas": { "type": "string" },
+        "Kelas_mulai": { "type": "string" },
+        "Kelas_Selesai": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["Mulai", "Lulus", "Tidak Lulus"]
+        },
+        "Instruktur": { "type": "string" },
+        "catatan_instruktur": { "type": "string" },
+        "link_sertifikat": { "type": "string" }
+      },
+      "required": ["id_transaksi", "no_peserta", "id_kelas", "Kelas_mulai", "status", "Instruktur"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Represents system-wide settings for links and Google Slide templates",
+      "type": "object",
+      "properties": {
+        "sheetId": { "type": "string" },
+        "appsScriptUrl": { "type": "string" },
+        "slideTemplateId": { "type": "string" },
+        "driveFolderId": { "type": "string" },
+        "isSyncEnabled": { "type": "boolean" },
+        "externalLink": { "type": "string" },
+        "externalLinkLabel": { "type": "string" },
+        "externalLink2": { "type": "string" },
+        "externalLinkLabel2": { "type": "string" }
+      },
+      "required": ["isSyncEnabled"]
+    },
+    "Pertanyaan": {
+      "title": "Pertanyaan",
+      "description": "Represents a question from a participant",
+      "type": "object",
+      "properties": {
+        "id_pertanyaan": { "type": "string" },
+        "no_peserta": { "type": "string" },
+        "nama_lengkap": { "type": "string" },
+        "judul": { "type": "string" },
+        "isi": { "type": "string" },
+        "tanggal_kirim": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["Menunggu Jawaban", "Dijawab"]
+        },
+        "jawaban": { "type": "string" },
+        "tanggal_dijawab": { "type": "string" }
+      },
+      "required": ["id_pertanyaan", "no_peserta", "nama_lengkap", "judul", "isi", "tanggal_kirim", "status"]
+    }
+  },
+  "firestore": {
+    "/classes/{classId}": {
+      "schema": "KelasKepahaman",
+      "description": "Collection of all available kepahaman classes"
+    },
+    "/participants/{participantNo}": {
+      "schema": "Peserta",
+      "description": "Collection of registered participants"
+    },
+    "/sirkulasi/{transactionId}": {
+      "schema": "KelasMulai",
+      "description": "Circulation tracking and class session history"
+    },
+    "/settings/{settingsId}": {
+      "schema": "SystemSettings",
+      "description": "System-wide global settings document"
+    },
+    "/questions/{questionId}": {
+      "schema": "Pertanyaan",
+      "description": "Questions submitted by participants"
+    }
+  }
+}

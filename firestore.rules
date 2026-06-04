@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helper Functions ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      // Mandate that the authenticated email is verified if it exists
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'password');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'yockuharis172@gmail.com' ||
+        request.auth.token.email == 'admin@gmail.com'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Resolves if the given participant registration references the logged-in user's email
+    function isOwnerOfParticipantNo(no_peserta) {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/participants/$(no_peserta)) &&
+             get(/databases/$(database)/documents/participants/$(no_peserta)).data.username == request.auth.token.email;
+    }
+
+    // --- Collection Rules ---
+
+    // 1. Classes Collection
+    match /classes/{classId} {
+      allow read: if true; // Public catalog access
+      allow write: if isAdmin();
+    }
+
+    // 2. Settings Collection
+    match /settings/{settingsId} {
+      allow read: if true; // Public reference needed for app integration links
+      allow write: if isAdmin();
+    }
+
+    // 3. Participants Collection
+    match /participants/{participantNo} {
+      allow get: if isAdmin() || (isSignedIn() && existing().username == request.auth.token.email);
+      allow list: if isAdmin();
+      
+      // Allow creation during self-registration or admin entry
+      allow create: if isAdmin() || (isSignedIn() && incoming().username == request.auth.token.email);
+      
+      // Allow updates only to current profile info, preventing privilege escalation (like changing no_peserta)
+      allow update: if isAdmin() || (
+        isSignedIn() && 
+        existing().username == request.auth.token.email && 
+        incoming().username == request.auth.token.email &&
+        incoming().no_peserta == existing().no_peserta
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // 4. Sirkulasi (Circulation logs) Collection
+    match /sirkulasi/{transactionId} {
+      allow get: if isAdmin() || isOwnerOfParticipantNo(existing().no_peserta);
+      allow list: if isAdmin() || (isSignedIn() && isOwnerOfParticipantNo(resource.data.no_peserta));
+      
+      allow create: if isAdmin();
+      
+      // Only Admin should ever update class records (marking completions/evaluations)
+      allow update: if isAdmin();
+      
+      allow delete: if isAdmin();
+    }
+
+    // 5. Questions Collection
+    match /questions/{questionId} {
+      allow get: if isAdmin() || isOwnerOfParticipantNo(existing().no_peserta);
+      allow list: if isAdmin() || (isSignedIn() && isOwnerOfParticipantNo(resource.data.no_peserta));
+      
+      // Standard participants can submit questions referencing their own nomor peserta
+      allow create: if isAdmin() || (
+        isSignedIn() && 
+        isOwnerOfParticipantNo(incoming().no_peserta)
+      );
+      
+      // Standard participants can edit their own questions before they are answered, admins can always answer
+      allow update: if isAdmin() || (
+        isSignedIn() && 
+        isOwnerOfParticipantNo(existing().no_peserta) && 
+        existing().status == 'Menunggu Jawaban' && 
+        incoming().status == 'Menunggu Jawaban' &&
+        incoming().no_peserta == existing().no_peserta
+      );
+      
+      allow delete: if isAdmin() || (
+        isSignedIn() && 
+        isOwnerOfParticipantNo(existing().no_peserta) && 
+        existing().status == 'Menunggu Jawaban'
+      );
+    }
+  }
+}

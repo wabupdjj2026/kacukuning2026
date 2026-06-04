@@ -1,0 +1,10 @@
+{
+  "name": "Remix: BERGERAK_MAJU",
+  "description": "Sistem sirkulasi 18 kelas kepahaman untuk admin dan peserta dengan QR code, scanner kehadiran, manajemen kartu peserta, dan cetak sertifikat.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
